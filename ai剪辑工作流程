@@ -1,0 +1,18 @@
+{
+  "name": "comfyui-video-workflow",
+  "version": "0.1.0",
+  "description": "ComfyUI video generation workflow plugin",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ComfyUI AI视频工作流",
+    "shortDescription": "Seedance 2.0 R2V 视频生成工作流，基于参考图生成时尚走秀视频。",
+    "longDescription": "基于字节跳动 Seedance 2.0 模型（ByteDance2ReferenceNode）的 ComfyUI 视频生成工作流。加载 4 张参考图（3 套服装 + 1 张自拍），以第一人称自拍视角生成含故障转场效果的 3 套服装换装视频。\n\n工作流节点：\n- LoadImage x4：加载 sd_outfit_1/2/3.png 和 selfie_cartoon_style.png\n- ByteDance2ReferenceNode：核心视频生成节点，接收参考图和 prompt\n- SaveVideo x2：输出生成视频\n\n参考图要求：放置在 ComfyUI 的 input 目录下",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Help me generate a fashion showcase video using the ComfyUI workflow."
+  }
+}
