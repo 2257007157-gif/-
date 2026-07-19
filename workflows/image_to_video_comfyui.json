@@ -1,0 +1,73 @@
+{
+  "name": "image-to-video-ai-workflow",
+  "version": "1.0.0",
+  "description": "ComfyUI 图片转 AI 视频工作流配置模板，适配 WanVideo、Seedance、LTX-Video 等 I2V 节点。",
+  "inputs": {
+    "reference_image": "image_to_video_reference.png",
+    "positive_prompt_file": "prompts/image_to_video_prompt.md",
+    "negative_prompt": "low quality, blurry, flickering, jitter, distorted face, deformed hands, extra fingers, text artifacts, watermark, logo, duplicated subject, broken anatomy, overexposed, underexposed, noisy background, sudden camera jump, unstable identity"
+  },
+  "recommended_settings": {
+    "width": 768,
+    "height": 1024,
+    "frames": 81,
+    "fps": 24,
+    "motion_strength": 0.55,
+    "cfg": 6.5,
+    "steps": 28,
+    "seed": 20260719
+  },
+  "comfyui_nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "title": "加载参考图",
+      "inputs": {
+        "image": "image_to_video_reference.png"
+      }
+    },
+    {
+      "id": 2,
+      "type": "CLIPTextEncode",
+      "title": "正向提示词",
+      "inputs": {
+        "text": "Use the reference image as the main subject. Create a cinematic short video with subtle natural motion, slow dolly-in camera movement, realistic lighting, detailed textures, stable composition, smooth temporal consistency, high-end commercial style, shallow depth of field, soft rim light, clean background, 24fps, professional color grading."
+      }
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "title": "负向提示词",
+      "inputs": {
+        "text": "low quality, blurry, flickering, jitter, distorted face, deformed hands, extra fingers, text artifacts, watermark, logo, duplicated subject, broken anatomy, overexposed, underexposed, noisy background, sudden camera jump, unstable identity"
+      }
+    },
+    {
+      "id": 4,
+      "type": "ImageToVideoModel",
+      "title": "图片转视频核心节点（按本地插件替换）",
+      "inputs": {
+        "image": [1, "IMAGE"],
+        "positive": [2, "CONDITIONING"],
+        "negative": [3, "CONDITIONING"],
+        "width": 768,
+        "height": 1024,
+        "frames": 81,
+        "fps": 24,
+        "motion_strength": 0.55,
+        "cfg": 6.5,
+        "steps": 28,
+        "seed": 20260719
+      }
+    },
+    {
+      "id": 5,
+      "type": "SaveVideo",
+      "title": "保存 MP4 视频",
+      "inputs": {
+        "video": [4, "VIDEO"],
+        "filename_prefix": "image_to_video_ai"
+      }
+    }
+  ]
+}
