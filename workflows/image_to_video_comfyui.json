@@ -1,55 +1,264 @@
 {
-  "name": "image-to-video-ai-workflow",
-  "version": "1.0.0",
-  "description": "ComfyUI 图片转 AI 视频工作流配置模板，适配 WanVideo、Seedance、LTX-Video 等 I2V 节点。",
-  "inputs": {
-    "reference_image": "image_to_video_reference.png",
-    "positive_prompt_file": "prompts/image_to_video_prompt.md",
-    "negative_prompt": "low quality, blurry, flickering, jitter, distorted face, deformed hands, extra fingers, text artifacts, watermark, logo, duplicated subject, broken anatomy, overexposed, underexposed, noisy background, sudden camera jump, unstable identity"
-  },
-  "recommended_settings": {
-    "width": 768,
-    "height": 1024,
-    "frames": 81,
-    "fps": 24,
-    "motion_strength": 0.55,
-    "cfg": 6.5,
-    "steps": 28,
-    "seed": 20260719
-  },
-  "comfyui_nodes": [
+  "last_node_id": 5,
+  "last_link_id": 4,
+  "nodes": [
     {
       "id": 1,
       "type": "LoadImage",
-      "title": "加载参考图",
-      "inputs": {
-        "image": "image_to_video_reference.png"
-      }
+      "pos": [
+        80,
+        220
+      ],
+      "size": [
+        315,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1
+          ],
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "image_to_video_reference.png",
+        "image"
+      ]
     },
     {
       "id": 2,
       "type": "CLIPTextEncode",
-      "title": "正向提示词",
-      "inputs": {
-        "text": "Use the reference image as the main subject. Create a cinematic short video with subtle natural motion, slow dolly-in camera movement, realistic lighting, detailed textures, stable composition, smooth temporal consistency, high-end commercial style, shallow depth of field, soft rim light, clean background, 24fps, professional color grading."
-      }
+      "pos": [
+        80,
+        590
+      ],
+      "size": [
+        420,
+        200
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            2
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Use the reference image as the main subject. Create a cinematic short video with subtle natural motion, slow dolly-in camera movement, realistic lighting, detailed textures, stable composition, smooth temporal consistency, high-end commercial style, shallow depth of field, soft rim light, clean background, 24fps, professional color grading."
+      ]
     },
     {
       "id": 3,
       "type": "CLIPTextEncode",
-      "title": "负向提示词",
-      "inputs": {
-        "text": "low quality, blurry, flickering, jitter, distorted face, deformed hands, extra fingers, text artifacts, watermark, logo, duplicated subject, broken anatomy, overexposed, underexposed, noisy background, sudden camera jump, unstable identity"
-      }
+      "pos": [
+        80,
+        840
+      ],
+      "size": [
+        420,
+        200
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            3
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "low quality, blurry, flickering, jitter, distorted face, deformed hands, extra fingers, text artifacts, watermark, logo, duplicated subject, broken anatomy, overexposed, underexposed, noisy background, sudden camera jump, unstable identity"
+      ]
     },
     {
       "id": 4,
-      "type": "ImageToVideoModel",
-      "title": "图片转视频核心节点（按本地插件替换）",
-      "inputs": {
-        "image": [1, "IMAGE"],
-        "positive": [2, "CONDITIONING"],
-        "negative": [3, "CONDITIONING"],
+      "type": "WanVideoImageToVideo",
+      "pos": [
+        650,
+        350
+      ],
+      "size": [
+        430,
+        520
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 2
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "WanVideoImageToVideo",
+        "note": "If your local I2V extension exposes another node name, replace this node while keeping the LoadImage and prompt links."
+      },
+      "widgets_values": [
+        768,
+        1024,
+        81,
+        24,
+        0.55,
+        6.5,
+        28,
+        20260719
+      ]
+    },
+    {
+      "id": 5,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        1210,
+        430
+      ],
+      "size": [
+        420,
+        300
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine",
+        "note": "Use VideoHelperSuite or replace with the video-save node provided by your installed I2V extension."
+      },
+      "widgets_values": [
+        24,
+        0,
+        true,
+        "image_to_video_ai",
+        "video/h264-mp4",
+        false,
+        false,
+        0
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8,
+      "offset": [
+        120,
+        40
+      ]
+    },
+    "workflow_metadata": {
+      "name": "image-to-video-ai-workflow",
+      "description": "ComfyUI-exported graph template for image-to-video generation. Install WanVideo (or replace node 4 with another I2V node) and VideoHelperSuite before running.",
+      "recommended_settings": {
         "width": 768,
         "height": 1024,
         "frames": 81,
@@ -59,15 +268,7 @@
         "steps": 28,
         "seed": 20260719
       }
-    },
-    {
-      "id": 5,
-      "type": "SaveVideo",
-      "title": "保存 MP4 视频",
-      "inputs": {
-        "video": [4, "VIDEO"],
-        "filename_prefix": "image_to_video_ai"
-      }
     }
-  ]
+  },
+  "version": 0.4
 }
