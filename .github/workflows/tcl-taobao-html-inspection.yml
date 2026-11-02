@@ -1,0 +1,48 @@
+name: TCL-Taobao-HTML-Link-Inspection
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect public Taobao HTML safely
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import crypto from 'node:crypto';
+          import fs from 'node:fs/promises';
+          const url='https://m.tb.cn/h.j6PTNeyMVeBrabu';
+          const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{'user-agent':'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36','accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','accept-language':'zh-CN,zh;q=0.9,en;q=0.5'}});
+          const html=(await response.text()).slice(0,1500000);
+          const normalized=html.replaceAll('\\/','/').replaceAll('&amp;','&').replaceAll('\\u0026','&').replaceAll('\\u003d','=');
+          const title=(normalized.match(/<title[^>]*>([^<]{0,150})<\/title>/i)||[])[1]||'';
+          const allUrls=[...normalized.matchAll(/(?:https?:\/\/|taobao:\/\/|tbopen:\/\/)[^\s"'<>\\]{8,800}/gi)].map(m=>m[0].replace(/[),;]+$/,''));
+          const candidates=[];
+          for(const s of allUrls){
+            try{
+              const u=new URL(s);
+              if(!/((^|\.)(taobao|tmall|tb|alicdn|alibaba|alipay)\.(com|cn)$)/i.test(u.hostname))continue;
+              const ids={};for(const [k,v] of u.searchParams)if(/^(id|liveid|roomid|sellerid|userId|anchorId|broadcasterId)$/i.test(k)&&/^\d{4,24}$/.test(v))ids[k]=v;
+              const sanitized=u.protocol+'//'+u.hostname+u.pathname;
+              const score=Number(/(live|shop|store|user|login|item|detail|redirect|j6PTNeyMVeBrabu)/i.test(sanitized))*2+Object.keys(ids).length;
+              if(!candidates.some(c=>c.url===sanitized))candidates.push({url:sanitized,publicIds:ids,score});
+            }catch{}
+          }
+          candidates.sort((a,b)=>b.score-a.score);
+          const patterns={javascriptRedirect:/\b(?:location\.(?:href|replace|assign)|window\.location|var\s+url\s*=)/i.test(normalized),metaRefresh:/http-equiv\s*=\s*["']?refresh/i.test(normalized),containsShopName:normalized.includes('TCL集团官方旗舰店'),containsLiveWord:/淘宝直播|直播间|liveId|liveRoomId/i.test(normalized),hasLoginChallenge:/验证码|安全验证|滑块验证|security check|访问受限/i.test(normalized)};
+          const result={runType:'public-html-only-no-account',source:url,status:response.status,contentType:response.headers.get('content-type'),location:response.headers.get('location')?'present-but-redacted':null,byteLength:Buffer.byteLength(html),sha256:crypto.createHash('sha256').update(html).digest('hex'),title:title.slice(0,150),patterns,candidateCount:candidates.length,candidates:candidates.slice(0,20),liveStatusVerified:false};
+          console.log(JSON.stringify(result,null,2));
+          await fs.writeFile('tcl-html-inspection.json',JSON.stringify(result,null,2)+'\n');
+          JS
+      - name: Upload redacted report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-html-inspection
+          path: tcl-html-inspection.json
+          retention-days: 7
