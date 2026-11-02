@@ -1,0 +1,52 @@
+name: TCL-Taobao-Headless-Browser-Inspection
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install public browser automation
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Inspect without authentication or cookies
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import fs from 'node:fs/promises';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'zh-CN',userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'});
+          const urls=['https://shop109942179.taobao.com/','https://m.tb.cn/h.j6PTNeyMVeBrabu'];
+          const clean=s=>{try{const u=new URL(s);return u.protocol+'//'+u.host+u.pathname;}catch{return 'invalid';}};
+          const publicIds=s=>{try{const u=new URL(s),x={};for(const [k,v] of u.searchParams)if(/^(id|liveId|roomId|sellerId|anchorId)$/i.test(k)&&/^\d{4,24}$/.test(v))x[k]=v;return x;}catch{return {}}};
+          const output={runType:'real Chromium public no-login browser',credentialsUsed:false,liveStatusVerified:false,at:new Date().toISOString(),pages:[]};
+          for(const url of urls){
+            const page=await context.newPage();const row={source:clean(url)};
+            try {
+              const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(5000);
+              const data=await page.evaluate(()=>{
+                const body=document.body?.innerText||'';
+                return {title:document.title,bodyLength:body.length,hasTCL:body.includes('TCL'),hasLive:/直播|live/i.test(body),hasChallenge:/安全验证|验证码|请登录|滑块验证|访问异常/i.test(body),links:Array.from(document.querySelectorAll('a[href]')).map(a=>({text:(a.innerText||'').slice(0,32),href:a.href})).filter(a=>/直播|live|shop|店铺/i.test(a.text+' '+a.href)).slice(0,40)};
+              });
+              row.status=response?.status()??null;row.finalUrl=clean(page.url());row.finalPublicIds=publicIds(page.url());
+              row.page={title:data.title.slice(0,120),bodyLength:data.bodyLength,hasTCL:data.hasTCL,hasLive:data.hasLive,hasChallenge:data.hasChallenge,links:data.links.map(x=>({text:x.text,url:clean(x.href),publicIds:publicIds(x.href)}))};
+            } catch(e){row.error=String(e?.message||e).slice(0,300);}
+            output.pages.push(row);await page.close().catch(()=>{});
+          }
+          await browser.close();
+          console.log(JSON.stringify(output,null,2));await fs.writeFile('tcl-browser-report.json',JSON.stringify(output,null,2)+'\n');
+          JS
+      - name: Publish public browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-browser-report
+          path: tcl-browser-report.json
+          retention-days: 7
