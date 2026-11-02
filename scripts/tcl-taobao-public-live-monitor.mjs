@@ -22,12 +22,20 @@ function parseJsonOrJsonp(s) {
 function normalise(payload) {
   if(!payload || !Array.isArray(payload.ret) || !payload.ret.some(x=>typeof x==='string'&&x.startsWith('SUCCESS'))) return null;
   const d=payload.data;
-  if(!d || String(d.accountId)!==TARGET.accountId ||
-     d.broadCaster?.accountName!==TARGET.shopName || String(d.roomNum)!==TARGET.roomNumber) return null;
+  // A stopped broadcast may return data.accountId=0 and data.liveId=0.
+  // The broadcaster object still identifies the fixed TCL account and room.
+  if(!d || String(d.broadCaster?.accountId)!==TARGET.accountId ||
+     d.broadCaster?.accountName!==TARGET.shopName ||
+     String(d.broadCaster?.roomNum)!==TARGET.roomNumber ||
+     String(d.roomNum)!==TARGET.roomNumber) return null;
   const room=Number(d.roomStatus), stream=Number(d.streamStatus);
   let state='UNKNOWN';
-  if(room===1 && stream===1) state='LIVE';
-  else if((room===2||room===0) && stream===0)state=room===2?'ENDED':'NOT_STARTED';
+  // "LIVE" must represent a current nonzero session, not a cached room shell.
+  if(room===1 && stream===1 &&
+     String(d.accountId)===TARGET.accountId &&
+     /^\\d{4,24}$/.test(String(d.liveId||''))) state='LIVE';
+  // Preview and completed-room states with no stream are both not currently live.
+  else if((room===2||room===0) && stream===0) state='OFFLINE';
   return {
     state, roomStatus:room, streamStatus:stream,
     liveId:String(d.liveId||''), roomNumber:String(d.roomNum),
@@ -35,7 +43,7 @@ function normalise(payload) {
     sourceStartTime: /^\d{13}$/.test(String(d.startTime||''))?new Date(Number(d.startTime)).toISOString():null,
   };
 }
-const report={schemaVersion:1,checkedAt:new Date().toISOString(),timeZone:'Asia/Shanghai',
+const report={schemaVersion:2,checkedAt:new Date().toISOString(),timeZone:'Asia/Shanghai',
   platform:TARGET.platform,shopName:TARGET.shopName,shopId:TARGET.shopId,
   accountId:TARGET.accountId,roomNumber:TARGET.roomNumber,
   status:'UNKNOWN',liveId:null,title:null,startTime:null,
@@ -80,7 +88,7 @@ try {
   }
   await context.close();
 } finally { await browser.close(); }
-if(report.status==='UNKNOWN') report.error='No authenticated public live-state observation (do not count as offline)';
+if(report.status==='UNKNOWN') report.error='No verified public live-state observation (do not count as offline)';
 const outfile='tcl-live-status.json';
 await fs.writeFile(outfile,JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
