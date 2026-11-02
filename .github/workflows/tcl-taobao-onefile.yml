@@ -1,0 +1,83 @@
+name: TCL-Taobao-Real-Network-Probe
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe public DNS HTTPS and Taobao redirect
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import dns from 'node:dns/promises';
+          import fs from 'node:fs/promises';
+
+          const sites = [
+            {key:'taobao-shortlink',url:'https://m.tb.cn/h.j6PTNeyMVeBrabu'},
+            {key:'taobao-home',url:'https://www.taobao.com/'},
+            {key:'baidu-control',url:'https://www.baidu.com/'},
+            {key:'github-control',url:'https://github.com/'}
+          ];
+          const allowedTaobao = /(^|\.)(tb\.cn|taobao\.com|tmall\.com|alibaba\.com|alipay\.com|alicdn\.com)$/i;
+          const safe = raw => {
+            try { const u=new URL(raw); return u.protocol+'//'+u.host+u.pathname; }
+            catch { return 'invalid-url'; }
+          };
+          const publicIds = raw => {
+            try {
+              const u=new URL(raw); const ids={};
+              for (const [key,value] of u.searchParams) {
+                if (/^(id|liveid|roomid|anchorid|sellerid|broadcasterid)$/i.test(key) && /^\d{4,24}$/.test(value)) ids[key]=value;
+              }
+              return ids;
+            } catch { return {}; }
+          };
+          const errorText = e => [e?.name,e?.code,e?.cause?.code,e?.message,e?.cause?.message].filter(Boolean).join(' | ').slice(0,240);
+          async function check(target) {
+            const x={name:target.key,host:new URL(target.url).hostname,dns:null,hops:[],state:'UNKNOWN',at:new Date().toISOString()};
+            try { const r=await dns.lookup(x.host);x.dns={ok:true,family:r.family}; }
+            catch(e){x.dns={ok:false,error:errorText(e)};x.state='DNS_FAILED';return x;}
+            let next=target.url;
+            for(let i=0;i<5;i++){
+              const ac=new AbortController();const timer=setTimeout(()=>ac.abort(),9000);
+              try {
+                const r=await fetch(next,{redirect:'manual',signal:ac.signal,headers:{'user-agent':'TCL-Network-Probe/1.0','accept':'text/html,application/json;q=0.9,*/*;q=0.5'}});
+                const loc=r.headers.get('location');
+                const dest=loc?new URL(loc,next):null;
+                x.hops.push({status:r.status,url:safe(next),publicIds:publicIds(next),next:dest?safe(dest.toString()):null,nextPublicIds:dest?publicIds(dest.toString()):{},contentType:(r.headers.get('content-type')||'').split(';')[0]});
+                await r.body?.cancel().catch(()=>{});
+                if([301,302,303,307,308].includes(r.status)&&dest){
+                  if(!['https:','http:'].includes(dest.protocol)||target.key==='taobao-shortlink'&&!allowedTaobao.test(dest.hostname)){x.state='REDIRECT_OUTSIDE_ALLOWLIST';break;}
+                  next=dest.toString(); x.state='REDIRECT_SEEN';continue;
+                }
+                x.state=[401,403,429].includes(r.status)?'AUTH_OR_RISK_CONTROL':r.status>=500?'REMOTE_SERVER_ERROR':r.status>=200&&r.status<300?'HTTP_REACHABLE_NOT_LIVE_STATUS':'HTTP_OTHER';break;
+              } catch(e){x.state='TLS_OR_NETWORK_FAILED';x.error=errorText(e);break;}
+              finally{clearTimeout(timer);}
+            }
+            return x;
+          }
+          const results=[];
+          for(const target of sites) results.push(await check(target));
+          const p=results[0];const controls=results.slice(2);
+          let diagnosis='Review recorded HTTP status and redirect chain';
+          if(p.state==='DNS_FAILED'&&controls.every(x=>x.state==='DNS_FAILED')) diagnosis='RUNNER_DNS_FAILURE';
+          else if(p.state==='DNS_FAILED') diagnosis='TAOBAO_DNS_FAILURE';
+          else if(p.state==='AUTH_OR_RISK_CONTROL') diagnosis='TAOBAO_AUTH_OR_RISK_CONTROL';
+          else if(p.state==='HTTP_REACHABLE_NOT_LIVE_STATUS') diagnosis='TAOBAO_HTTP_REACHABLE_LIVE_STATUS_UNVERIFIED';
+          const report={date:new Date().toISOString(),source:'real GitHub-hosted runner network probe',credentialsUsed:false,liveStatusVerified:false,diagnosis,results};
+          console.log(JSON.stringify(report,null,2));
+          await fs.writeFile('tcl-network-report.json',JSON.stringify(report,null,2)+'\n');
+          JS
+      - name: Upload sanitized probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-network-report
+          path: tcl-network-report.json
+          if-no-files-found: warn
+          retention-days: 7
