@@ -1,0 +1,47 @@
+name: TCL-Taobao-Storefront-Inspection
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read public storefront without login
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs/promises';
+          const target='https://shop109942179.taobao.com/';
+          const clean=s=>{try{const u=new URL(s);return u.protocol+'//'+u.hostname+u.pathname;}catch{return 'invalid';}};
+          const idOf=s=>{try{const u=new URL(s);const ids={};for(const [k,v] of u.searchParams){if(/^(id|liveid|roomid|sellerid|anchorid|broadcasterid)$/i.test(k)&&/^\d{4,24}$/.test(v))ids[k]=v;}return ids;}catch{return {};}};
+          const out={target,source:'GitHub hosted runner public storefront probe',credentialsUsed:false,liveStatusVerified:false,checks:[]};
+          let next=target;
+          for(let i=0;i<4;i++){
+            const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),12000);
+            try{
+              const r=await fetch(next,{redirect:'manual',signal:ac.signal,headers:{'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36','accept-language':'zh-CN,zh;q=0.9','accept':'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'}});
+              const loc=r.headers.get('location'),dest=loc?new URL(loc,next):null;
+              const html=(await r.text()).slice(0,1600000).replaceAll('\\/','/');
+              const urls=[...html.matchAll(/https?:\/\/[^\s"'<>\\]{10,600}/gi)].map(x=>x[0]);
+              const relevant=[];
+              for(const value of urls){try{const u=new URL(value);const s=clean(value);if(!/(^|\.)(taobao|tmall|tb)\.(com|cn)$/i.test(u.hostname))continue;if(!/(live|shop|stream|item|user|detail)/i.test(s))continue;if(!relevant.some(x=>x.url===s))relevant.push({url:s,ids:idOf(value)});}catch{}}
+              const result={url:clean(next),status:r.status,contentType:r.headers.get('content-type'),size:Buffer.byteLength(html),redirect:dest?clean(dest.toString()):null,redirectIds:dest?idOf(dest.toString()):{},title:(html.match(/<title[^>]*>([^<]{0,150})<\/title>/i)||[])[1]||'',hasTCL:/(TCL集团官方旗舰店|TCL)/i.test(html),hasLive:/直播间|淘宝直播|liveId|liveRoom/i.test(html),hasLogin:/登录|安全验证|验证码|风控/i.test(html),relevant:relevant.slice(0,20)};
+              out.checks.push(result);
+              if(!dest||![301,302,303,307,308].includes(r.status))break;
+              if(!['https:','http:'].includes(dest.protocol)||!/(^|\.)(taobao|tmall|tb)\.(com|cn)$/i.test(dest.hostname))break;
+              next=dest.toString();
+            }catch(e){out.checks.push({url:clean(next),error:String(e.cause?.code||e.code||e.message)});break;}finally{clearTimeout(timer);}
+          }
+          console.log(JSON.stringify(out,null,2));await fs.writeFile('tcl-storefront-report.json',JSON.stringify(out,null,2)+'\n');
+          JS
+      - name: Upload storefront report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-storefront-report
+          path: tcl-storefront-report.json
+          retention-days: 7
