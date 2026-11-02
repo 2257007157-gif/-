@@ -27,3 +27,5 @@ jobs:
           path: tcl-live-status.json
           retention-days: 7
           if-no-files-found: warn
+
+# 2026-11-03 independent recheck: original monitor unchanged; rerun on fresh GitHub runner.
