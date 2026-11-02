@@ -1,0 +1,76 @@
+name: TCL-Taobao-Public-Live-Detail-Status-Probe
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths: ['.github/workflows/tcl-taobao-public-live-detail-status-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Inspect public live-detail response only
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import fs from 'node:fs/promises';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN',userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'});
+          const page=await context.newPage(),pending=[];
+          const output={time:new Date().toISOString(),targetShop:'TCL集团官方旗舰店',targetUserId:'2050532947',pageRoomNumber:'130742 (previous run; not proven liveId)',authenticated:false,liveStatusVerified:false,apiResponses:[]};
+          function pickFields(data) {
+            const found=[];
+            const want=/(^ret$|^api$|^code$|^success$|^errorCode$|^message$|^msg$|^roomStatus$|^room_status$|^streamStatus$|^stream_status$|^status$|^liveStatus$|^live_status$|^isLive$|^living$|^onLive$|^liveId$|^live_id$|^roomId$|^room_id$|^accountId$|^account_id$|^anchorId$|^anchor_id$|^broadcasterId$|^userId$|^startTime$|^endTime$|^liveStartTime$|^liveEndTime$|^title$|^broadcasterName$|^accountName$|^tbNick$|^roomNumber$|^roomNum$|^videoId$)/i;
+            const walk=(v,path,depth)=>{
+              if(depth>9||found.length>90||v===null)return;
+              if(Array.isArray(v)){for(let i=0;i<Math.min(v.length,4);i++)walk(v[i],path+'['+i+']',depth+1);return;}
+              if(typeof v==='object'){
+                for(const [k,val] of Object.entries(v)){if(found.length>90)break;const p=path?path+'.'+k:k;
+                  if(want.test(k)&&['string','number','boolean'].includes(typeof val)&&String(val).length<=100)found.push({key:p,value:val});
+                  if(val&&typeof val==='object')walk(val,p,depth+1);
+                }
+              }
+            };
+            walk(data,'',0);return found;
+          }
+          page.on('response',response=>{
+            let u;try{u=new URL(response.url())}catch{return;}
+            const x=u.pathname;
+            if(u.hostname!=='h5api.m.taobao.com'||!/(mediaplatform\.live\.livedetail|mediaplatform\.live\.videolist|mediaplatform\.video\.livedetail)/.test(x))return;
+            pending.push((async()=>{
+              const item={endpoint:u.origin+x,httpStatus:response.status(),type:response.headers()['content-type']?.split(';')[0]||''};
+              try{
+                const text=(await response.text()).slice(0,2000000);
+                let value;
+                try{value=JSON.parse(text)}catch{item.parse='not-json';output.apiResponses.push(item);return;}
+                item.jsonRootKeys=value&&typeof value==='object'?Object.keys(value).slice(0,18):[];
+                item.fields=pickFields(value);
+              }catch(e){item.error=String(e?.message||e).slice(0,120);}
+              output.apiResponses.push(item);
+            })());
+          });
+          try{
+            const r=await page.goto('https://h5.m.taobao.com/taolive/video.html?userId=2050532947',{waitUntil:'domcontentloaded',timeout:28000});
+            await page.waitForTimeout(8000);
+            output.page={httpStatus:r?.status(),title:await page.title(),visibleText:(await page.locator('body').innerText()).slice(0,400),hasShopName:(await page.locator('body').innerText()).includes('TCL集团官方旗舰店')};
+          }catch(e){output.page={error:String(e?.message||e).slice(0,170)};}
+          await Promise.allSettled(pending);
+          await browser.close();
+          console.log(JSON.stringify(output,null,2));
+          await fs.writeFile('tcl-live-detail-status.json',JSON.stringify(output,null,2)+'\n');
+          JS
+      - name: Upload safe status report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-live-detail-status
+          path: tcl-live-detail-status.json
+          retention-days: 7
+          if-no-files-found: warn
