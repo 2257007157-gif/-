@@ -1,0 +1,89 @@
+name: TCL-Taobao-Live-MTOP-JSONP-Status-Check
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths: ['.github/workflows/tcl-taobao-live-mtop-jsonp-status-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install public browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Parse only public live-detail status fields
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import fs from 'node:fs/promises';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const result={run:'TCL public Taobao Live JSONP inspection',time:new Date().toISOString(),userId:'2050532947',noUserSession:true,verifiedLive:false,observations:[]};
+          function parseJSONP(source){
+            let s=source.trim();
+            try{return JSON.parse(s)}catch{}
+            const l=s.indexOf('('),r=s.lastIndexOf(')');
+            if(l<0||r<=l)throw Error('unknown-response-format');
+            const prefix=s.slice(0,l).trim();
+            if(!/^[\w$.]{1,64}$/.test(prefix))throw Error('invalid-jsonp-callback');
+            return JSON.parse(s.slice(l+1,r));
+          }
+          function extract(obj){
+            const found=[],sensitive=/(token|secret|cookie|sign|auth|url|password|mobile|email|phone)/i;
+            const important=/(^ret$|^errorCode$|^error_code$|^code$|^success$|^message$|^msg$|^roomStatus$|^room_status$|^streamStatus$|^stream_status$|^liveRoomStatus$|^live_room_status$|^status$|^liveStatus$|^live_status$|^living$|^isLive$|^onLive$|^liveId$|^live_id$|^roomId$|^room_id$|^accountId$|^account_id$|^anchorId$|^anchor_id$|^broadcasterId$|^userId$|^startTime$|^endTime$|^liveStartTime$|^liveEndTime$|^title$|^broadcasterName$|^accountName$|^tbNick$|^roomNumber$|^roomNum$|^videoId$|^watchCount$|^viewCount$|^roomName$)/i;
+            const walk=(v,path,depth)=>{
+              if(depth>10||found.length>=90||v===null||v===undefined)return;
+              if(Array.isArray(v)){for(let i=0;i<Math.min(v.length,5);i++)walk(v[i],path+'['+i+']',depth+1);return;}
+              if(typeof v==='object'){for(const [k,val] of Object.entries(v)){
+                if(sensitive.test(k))continue;
+                const p=path?path+'.'+k:k;
+                if(important.test(k)&&['number','string','boolean'].includes(typeof val)&&String(val).length<=100)found.push({key:p,value:val});
+                if(important.test(k)&&Array.isArray(val)&&val.every(x=>typeof x==='string'&&x.length<70))found.push({key:p,value:val.slice(0,6)});
+                if(val&&typeof val==='object')walk(val,p,depth+1);
+              }}
+            };
+            walk(obj,'',0);return found;
+          }
+          const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN',userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'});
+          for(let attempt=1;attempt<=2;attempt++){
+            const page=await context.newPage(),pending=[];
+            const obs={attempt};
+            page.on('response',resp=>{
+              let u;try{u=new URL(resp.url())}catch{return;}
+              if(u.hostname!=='h5api.m.taobao.com'||!u.pathname.includes('mtop.mediaplatform.live.livedetail/4.0'))return;
+              pending.push((async()=>{
+                const item={status:resp.status(),endpoint:u.origin+u.pathname};
+                try{
+                  const raw=await resp.text();const body=parseJSONP(raw);
+                  item.format='json-or-jsonp';item.rootKeys=Object.keys(body).slice(0,12);
+                  item.fields=extract(body);
+                  item.bodyDataType=typeof body.data;
+                }catch(e){item.error=String(e.message).slice(0,90);}
+                obs.api=item;
+              })());
+            });
+            try{
+              const response=await page.goto('https://h5.m.taobao.com/taolive/video.html?userId=2050532947',{waitUntil:'domcontentloaded',timeout:26000});
+              await page.waitForTimeout(7500);
+              const body=(await page.locator('body').innerText()).slice(0,220);
+              obs.page={httpStatus:response?.status(),title:await page.title(),text:body,hasShop:body.includes('TCL集团官方旗舰店'),isLoading:body.includes('加载中')};
+            }catch(e){obs.page={error:String(e.message).slice(0,130)};}
+            await Promise.allSettled(pending);
+            result.observations.push(obs);await page.close().catch(()=>{});
+          }
+          await browser.close();
+          console.log(JSON.stringify(result,null,2));
+          await fs.writeFile('tcl-mtop-jsonp-probe.json',JSON.stringify(result,null,2)+'\n');
+          JS
+      - name: Upload sanitized status probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-mtop-jsonp-probe
+          path: tcl-mtop-jsonp-probe.json
+          retention-days: 7
+          if-no-files-found: warn
