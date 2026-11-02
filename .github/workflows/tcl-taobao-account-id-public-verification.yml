@@ -1,0 +1,81 @@
+name: TCL-Taobao-Live-Account-ID-Public-Verification
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths: ['.github/workflows/tcl-taobao-account-id-public-verification.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-public-link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install Chromium guest browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Public account ID and legacy live-page check
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs/promises';
+          import {chromium} from 'playwright';
+          const ID='2050532947',SHOP='109942179';
+          const urls=[
+            {name:'legacy-taolive-by-userId',url:'https://h5.m.taobao.com/taolive/video.html?userId='+ID},
+            {name:'legacy-taolive-living',url:'https://h5.m.taobao.com/taolive/video.html?userId='+ID+'&livetype=living'},
+            {name:'historic-tcl-store-event',url:'https://market.m.taobao.com/app/tb-source-app/shopact/pages/index?wh_weex=true&pathInfo=shop/activity&userId='+ID+'&shopId='+SHOP+'&pageId=287534080&alisite=true'},
+            {name:'public-live-home-control',url:'https://live.taobao.com/'}
+          ];
+          const normalized=u=>{try{const x=new URL(u);return x.origin+x.pathname;}catch{return 'invalid'}};
+          const publicIds=u=>{try{const o={};for(const [k,v] of new URL(u).searchParams)if(/^(userId|liveId|roomId|anchorId|sellerId|shopId|id)$/i.test(k)&&/^\d{4,24}$/.test(v))o[k]=v;return o;}catch{return {}}};
+          const signals=text=>({
+            mentionsTargetAccount:text.includes(ID),
+            mentionsTargetShop:text.includes(SHOP),
+            mentionsTclStore:text.includes('TCL集团官方旗舰店'),
+            mentionsLiveWord:/直播间|淘宝直播|taolive|liveId|roomId/i.test(text),
+            mentionsLogin:/请登录|登录页面|手机扫码登录/i.test(text),
+            mentionsGate:/安全验证|验证码|滑块验证|访问异常/i.test(text),
+            hasRoomStatusField:/["'](?:room_status|roomStatus|live_room_status|liveRoomStatus)["']\s*:/i.test(text),
+            hasStreamStatusField:/["'](?:stream_status|streamStatus)["']\s*:/i.test(text)
+          });
+          const report={testedAt:new Date().toISOString(),target:'TCL集团官方旗舰店',shopId:SHOP,historicShopUserId:ID,identityConfidence:'historically-correlated-only',credentialsUsed:false,liveStatusVerified:false,checks:[]};
+          for (const t of urls){
+            const row={name:t.name,requestedPath:normalized(t.url),requestedIds:publicIds(t.url)};
+            try{
+              const r=await fetch(t.url,{redirect:'manual',signal:AbortSignal.timeout(18000),headers:{'user-agent':'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0.0.0 Mobile Safari/537.36','accept-language':'zh-CN,zh;q=0.9'}});
+              const body=(await r.text()).slice(0,350000);
+              row.http={code:r.status,contentType:r.headers.get('content-type'),locationPath:normalized(r.headers.get('location')||''),locationIds:publicIds(r.headers.get('location')||''),textLength:body.length,signals:signals(body)};
+            }catch(e){row.http={error:String(e?.cause?.code||e?.message||e).slice(0,150)};}
+            report.checks.push(row);
+          }
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN',userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0.0.0 Mobile Safari/537.36'});
+          for(const t of urls.slice(0,3)){
+            const page=await context.newPage(),row={name:t.name};
+            try{
+              const response=await page.goto(t.url,{waitUntil:'domcontentloaded',timeout:22000});
+              await page.waitForTimeout(3500);
+              const info=await page.evaluate(()=>{
+                const text=(document.body?.innerText||'').slice(0,50000);
+                const html=document.documentElement?.outerHTML?.slice(0,150000)||'';
+                return {title:document.title,textLength:text.length,htmlLength:html.length,text,html};
+              });
+              row.browser={initialHttp:response?.status(),finalPath:normalized(page.url()),finalIds:publicIds(page.url()),title:info.title.slice(0,100),textLength:info.textLength,signals:signals(info.text+'\n'+info.html)};
+            }catch(e){row.browser={error:String(e?.message||e).slice(0,180)};}
+            report.checks.find(x=>x.name===t.name).browser=row.browser;
+            await page.close().catch(()=>{});
+          }
+          await context.close();await browser.close();
+          console.log(JSON.stringify(report,null,2));
+          await fs.writeFile('tcl-account-id-verification.json',JSON.stringify(report,null,2)+'\n');
+          JS
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-account-id-verification
+          path: tcl-account-id-verification.json
+          retention-days: 7
+          if-no-files-found: warn
