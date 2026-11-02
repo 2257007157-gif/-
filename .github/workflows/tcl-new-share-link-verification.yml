@@ -1,0 +1,76 @@
+name: TCL-New-Taobao-Share-Link-Verification
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths: ['.github/workflows/tcl-new-share-link-verification.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Setup Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Compare links and inspect guest landing
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import fs from 'node:fs/promises';
+          const targets=[
+            {label:'new-link',url:'https://m.tb.cn/h.jgYZ8PRJF6FQ7Fq'},
+            {label:'previous-shop-link',url:'https://m.tb.cn/h.j6PTNeyMVeBrabu'}
+          ];
+          const clean=x=>{try{const u=new URL(x);return u.origin+u.pathname;}catch{return null;}};
+          const ids=x=>{try{const u=new URL(x),ret={};for(const [k,v] of u.searchParams)if(/^(userId|sellerId|liveId|roomId|anchorId|id)$/i.test(k)&&/^\d{4,24}$/.test(v))ret[k]=v;return ret;}catch{return {}}};
+          const safeUrls=text=>{
+            const normalized=text.replaceAll('\\/','/').replaceAll('\\u0026','&').replaceAll('&amp;','&');
+            const regex=/(?:https?:\\?\/\\?\/|taobao:\/\/)[^\s"'<>\\]{12,800}/gi;
+            const arr=[];for(const m of normalized.matchAll(regex)){
+              const s=m[0];try{const u=new URL(s);if(!/(^|\.)(taobao\.com|tmall\.com|tb\.cn|alicdn\.com|alibaba\.com)$/i.test(u.hostname))continue;const item={url:clean(s),ids:ids(s)};if(!arr.some(x=>x.url===item.url))arr.push(item);}catch{}
+            }return arr.slice(0,35);
+          };
+          const output={source:'real GitHub hosted runner (anonymous) new vs previous link',time:new Date().toISOString(),credentialsUsed:false,liveStatusVerified:false,checks:[]};
+          for(const t of targets){
+            const row={label:t.label};
+            try{
+              const r=await fetch(t.url,{redirect:'manual',signal:AbortSignal.timeout(18000),headers:{'user-agent':'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0.0.0 Mobile Safari/537.36'}});
+              const html=await r.text();
+              row.direct={status:r.status,contentType:r.headers.get('content-type'),length:html.length,location:clean(r.headers.get('location')||''),locationIds:ids(r.headers.get('location')||''),hasLiveTerms:/直播间|liveId|roomId|taolive|live\.taobao/i.test(html),hasShopTerms:/shop\d+\.taobao\.com|店铺|shop/i.test(html),hasLoginTerms:/登录|验证码|安全验证/i.test(html),embeddedUrls:safeUrls(html)};
+            }catch(e){row.direct={error:String(e?.cause?.code||e?.message).slice(0,220)};}
+            output.checks.push(row);
+          }
+          const b=await chromium.launch({headless:true,args:['--no-sandbox']});
+          for(const mobile of [false,true]){
+            const c=await b.newContext(mobile?{viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN',userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0.0.0 Mobile Safari/537.36'}:{viewport:{width:1365,height:768},locale:'zh-CN',userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36'});
+            const page=await c.newPage();
+            const row={mode:mobile?'mobile guest Chromium':'desktop guest Chromium'};
+            try{
+              const resp=await page.goto(targets[0].url,{waitUntil:'domcontentloaded',timeout:26000});
+              await page.waitForTimeout(4500);
+              const dom=await page.evaluate(()=>{
+                const body=document.body?.innerText||'';
+                const links=[...document.querySelectorAll('a[href]')].slice(0,150).map(x=>({text:(x.innerText||'').slice(0,32),href:x.href})).filter(x=>/直播|live|tcl|主页|店铺/i.test(x.text+' '+x.href)).slice(0,20);
+                return {title:document.title,textLength:body.length,hasTCL:body.includes('TCL'),hasLive:/直播|正在直播/.test(body),hasLogin:/登录|验证码|扫码登录/.test(body),links};
+              });
+              row.result={initialResponse:resp?.status(),finalUrl:clean(page.url()),finalIds:ids(page.url()),title:dom.title,textLength:dom.textLength,hasTCL:dom.hasTCL,hasLive:dom.hasLive,hasLogin:dom.hasLogin,links:dom.links.map(x=>({text:x.text,url:clean(x.href),ids:ids(x.href)}))};
+            }catch(e){row.error=String(e?.message||e).slice(0,220);}
+            output.checks.push(row);
+            await c.close();
+          }
+          await b.close();
+          console.log(JSON.stringify(output,null,2));
+          await fs.writeFile('new-share-link-verification.json',JSON.stringify(output,null,2)+'\n');
+          JS
+      - name: Upload sanitized verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-new-share-link-verification
+          path: new-share-link-verification.json
+          retention-days: 7
+          if-no-files-found: warn
