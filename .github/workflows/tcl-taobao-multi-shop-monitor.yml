@@ -1,0 +1,34 @@
+name: TCL-Taobao-Tmall-Multi-Shop-Guest-Verification
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths:
+      - 'config/tcl-taobao-tmall-shops.json'
+      - 'scripts/tcl-taobao-multi-shop-monitor.mjs'
+      - '.github/workflows/tcl-taobao-multi-shop-monitor.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout independent diagnostic branch
+        uses: actions/checkout@v4
+      - name: Install runtime and Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Verify parser and classifications
+        run: node scripts/tcl-taobao-multi-shop-monitor.mjs --self-test
+      - name: Verify TCL live room candidates on real internet
+        run: node scripts/tcl-taobao-multi-shop-monitor.mjs
+      - name: Preserve structured per-shop evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-tmall-multi-shop-evidence
+          path: tcl-multi-shop-status.json
+          retention-days: 7
+          if-no-files-found: warn
