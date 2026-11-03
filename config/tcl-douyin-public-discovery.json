@@ -50,6 +50,24 @@
       "label": "TCL空调总部官方直播间相关公开视频的发布者主页候选",
       "kind": "profile",
       "url": "https://www.douyin.com/user/MS4wLjABAAAAhiY52DG42njffnKGyWFpKSXJzn2au4FDC40NUdz56TtOxx56LLxa55v9pzk3F8yx"
+    },
+    {
+      "key": "tcl-tv-official-video-candidate",
+      "label": "TCL电视官方直播间相关2026视频，发布者待确认",
+      "kind": "video",
+      "url": "https://www.douyin.com/video/7681518140584447275"
+    },
+    {
+      "key": "tcl-tv-official-promo-candidate",
+      "label": "TCL电视官方相关2026视频，发布者待确认",
+      "kind": "video",
+      "url": "https://www.douyin.com/video/7685334519460744491"
+    },
+    {
+      "key": "tcl-air-official-historical-video",
+      "label": "TCL空调旗舰店相关历史公开视频，发布者待确认",
+      "kind": "video",
+      "url": "https://www.douyin.com/video/7148273261053218055"
     }
   ]
 }
