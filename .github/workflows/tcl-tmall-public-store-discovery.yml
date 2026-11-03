@@ -1,0 +1,31 @@
+name: TCL-Tmall-Public-Store-ID-Discovery
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths:
+      - 'scripts/tcl-tmall-public-store-discovery.mjs'
+      - 'config/tcl-tmall-public-store-discovery.json'
+      - '.github/workflows/tcl-tmall-public-store-discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install public browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Inspect guest storefronts without login
+        run: node scripts/tcl-tmall-public-store-discovery.mjs
+      - name: Upload safe results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-tmall-store-discovery
+          path: tcl-tmall-public-store-discovery.json
+          retention-days: 7
+          if-no-files-found: warn
