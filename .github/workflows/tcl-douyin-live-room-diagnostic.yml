@@ -1,0 +1,32 @@
+name: TCL-Douyin-Live-Room-Guest-Corroboration
+on:
+  workflow_dispatch:
+  push:
+    branches: [tcl-douyin-diagnostic]
+    paths:
+      - 'scripts/tcl-douyin-live-room-diagnostic.mjs'
+      - 'config/tcl-douyin-live-room-candidates.json'
+      - '.github/workflows/tcl-douyin-live-room-diagnostic.yml'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout independent Douyin branch
+        uses: actions/checkout@v4
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Cross-check TCL public profiles and linked live rooms
+        run: node scripts/tcl-douyin-live-room-diagnostic.mjs
+      - name: Upload status-evidence JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-douyin-live-room-evidence
+          path: tcl-douyin-live-room-diagnostic.json
+          retention-days: 7
+          if-no-files-found: warn
