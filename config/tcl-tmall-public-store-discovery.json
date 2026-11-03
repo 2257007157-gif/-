@@ -31,6 +31,11 @@
       "key": "tcl-lighting-home",
       "name": "tcllighting家居旗舰店",
       "url": "https://tcllighting.tmall.com/"
+    },
+    {
+      "key": "tcl-air-conditioner-official",
+      "name": "TCL空调官方旗舰店",
+      "url": "https://tclkt.tmall.com/"
     }
   ]
 }
