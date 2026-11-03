@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "purpose": "Read-only verification of publicly linked Douyin TCL livestream rooms; names/links checked in GitHub run 41599608133. User monitoring scope not yet authorized.",
+  "purpose": "Four TCL Douyin accounts expressly included in the user's monitoring scope on 2026-11-03. This is a diagnostic configuration, not a deployed monitoring or formal scoring service.",
   "targets": [
     {
       "key": "tcl-douyin-flagship",
@@ -9,7 +9,7 @@
       "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAVozXF9jRtNt6k62dH8TZXld0RGpvIK8aZxEh3oWcBfM",
       "roomId": "31878890513",
       "roomUrl": "https://live.douyin.com/31878890513",
-      "scopeApproved": false
+      "scopeApproved": true
     },
     {
       "key": "tcl-douyin-air-direct",
@@ -18,7 +18,7 @@
       "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAhiY52DG42njffnKGyWFpKSXJzn2au4FDC40NUdz56TtOxx56LLxa55v9pzk3F8yx",
       "roomId": "802817151945",
       "roomUrl": "https://live.douyin.com/802817151945",
-      "scopeApproved": false
+      "scopeApproved": true
     },
     {
       "key": "tcl-douyin-tv-official-live",
@@ -27,7 +27,7 @@
       "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAsXDlbg6rHqDV6y7kMxV2GCba4ey2QgDcmUxTuFhnGf5kYIphYC_ieueMXsLlWXgY",
       "roomId": "570552456352",
       "roomUrl": "https://live.douyin.com/570552456352",
-      "scopeApproved": false
+      "scopeApproved": true
     },
     {
       "key": "tcl-douyin-tv-corporate",
@@ -36,7 +36,7 @@
       "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAIOvCAk_PEYrfvxNT547O5JaYPQvuKY8XgtYpRPtrh74zat0zFLH4vXXK1rF36Got",
       "roomId": "478709678965",
       "roomUrl": "https://live.douyin.com/478709678965",
-      "scopeApproved": false
+      "scopeApproved": true
     }
   ]
 }
