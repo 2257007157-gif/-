@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "description": "Public historical TCL Lighting channel store URLs from https://www.tcl-lighting.com/xwxq/b7wqkaEb. None is asserted to be a user-required monitoring target.",
+  "items": [
+    {
+      "key": "tcl-lighting-official",
+      "name": "TCL照明官方旗舰店",
+      "url": "https://tclzm.tmall.com/"
+    },
+    {
+      "key": "tcl-outdoor",
+      "name": "TCL户外旗舰店",
+      "url": "https://tclhw.tmall.com/"
+    },
+    {
+      "key": "tcl-xinyangxuan",
+      "name": "TCL欣阳轩专卖店",
+      "url": "https://tclxyx.tmall.com/"
+    },
+    {
+      "key": "tcl-lili",
+      "name": "TCL立里专卖店",
+      "url": "https://tcllili.tmall.com/"
+    },
+    {
+      "key": "tcl-authentic",
+      "name": "TCL正品专卖店",
+      "url": "https://tclzp.tmall.com/"
+    },
+    {
+      "key": "tcl-lighting-home",
+      "name": "tcllighting家居旗舰店",
+      "url": "https://tcllighting.tmall.com/"
+    }
+  ]
+}
