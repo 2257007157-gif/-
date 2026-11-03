@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Read-only verification of publicly linked Douyin TCL livestream rooms; names/links checked in GitHub run 41599608133. User monitoring scope not yet authorized.",
+  "targets": [
+    {
+      "key": "tcl-douyin-flagship",
+      "accountName": "TCL官方旗舰店",
+      "displayDouyinId": "79013748820",
+      "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAVozXF9jRtNt6k62dH8TZXld0RGpvIK8aZxEh3oWcBfM",
+      "roomId": "31878890513",
+      "roomUrl": "https://live.douyin.com/31878890513",
+      "scopeApproved": false
+    },
+    {
+      "key": "tcl-douyin-air-direct",
+      "accountName": "TCL空调总部官方直播间",
+      "displayDouyinId": "75800827047",
+      "profileUrl": "https://www.douyin.com/user/MS4wLjABAAAAhiY52DG42njffnKGyWFpKSXJzn2au4FDC40NUdz56TtOxx56LLxa55v9pzk3F8yx",
+      "roomId": "802817151945",
+      "roomUrl": "https://live.douyin.com/802817151945",
+      "scopeApproved": false
+    }
+  ]
+}
