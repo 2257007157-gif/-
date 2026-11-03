@@ -31,24 +31,36 @@
       "platform": "tmall",
       "displayName": "TCL照明官方旗舰店",
       "storeUrl": "https://tclzm.tmall.com/",
-      "shopId": null,
-      "accountId": null,
+      "shopId": "73045984",
+      "accountId": "1015493951",
       "roomNumber": null,
-      "verificationStage": "candidate-store-url-only",
+      "verificationStage": "storefront-public-seller-id-candidate",
       "userConfirmed": false,
-      "sourceNote": "TCL Lighting public retailer list"
+      "sourceNote": "Public Tmall guest storefront shopId/sellerId via GitHub Actions run 41596209429; livestream identity not yet verified"
     },
     {
       "key": "tcl-outdoor-candidate",
       "platform": "tmall",
       "displayName": "TCL户外旗舰店",
       "storeUrl": "https://tclhw.tmall.com/",
-      "shopId": null,
-      "accountId": null,
+      "shopId": "541197361",
+      "accountId": "2208987173657",
       "roomNumber": null,
-      "verificationStage": "candidate-store-url-only",
+      "verificationStage": "storefront-public-seller-id-candidate",
       "userConfirmed": false,
-      "sourceNote": "TCL Lighting public retailer list"
+      "sourceNote": "Public Tmall guest storefront shopId/sellerId via GitHub Actions run 41596209429; livestream identity not yet verified"
+    },
+    {
+      "key": "tcl-authentic-candidate",
+      "platform": "tmall",
+      "displayName": "TCL正品专卖店",
+      "storeUrl": "https://tclzp.tmall.com/",
+      "shopId": "242549842",
+      "accountId": "2206689737964",
+      "roomNumber": null,
+      "verificationStage": "storefront-public-seller-id-candidate",
+      "userConfirmed": false,
+      "sourceNote": "Public Tmall guest storefront shopId/sellerId via GitHub Actions run 41596209429; livestream identity not yet verified"
     }
   ]
 }
