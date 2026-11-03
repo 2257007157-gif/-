@@ -13,16 +13,15 @@ function infoFromURL(url){
   }catch{return {error:'invalid-url'};}
 }
 function possibleIds(text){
-  const keys=['shopId','sellerId','user_number_id','userId','accountId'];
-  const output={};
-  for(const key of keys){
-    const re=new RegExp('(?:["\\']?'+key+'["\\']?\\s*[:=]\\s*["\\']?)(\\d{5,24})(?=["\\'\\s,;&<>}])','gi');
-    const ids=new Set();
-    let m;let n=0;
-    while((m=re.exec(text))!==null&&n++<120)ids.add(m[1]);
-    if(ids.size)output[key]=[...ids].slice(0,10);
+  const ids={};
+  const re=/(shopId|sellerId|user_number_id|userId|accountId)["']?\s*[:=]\s*["']?(\d{5,24})/gi;
+  let match; let count=0;
+  while((match=re.exec(text))!==null && count++<120){
+    const key=match[1],value=match[2];
+    const list=ids[key]||(ids[key]=[]);
+    if(!list.includes(value)&&list.length<10)list.push(value);
   }
-  return output;
+  return ids;
 }
 const r={schemaVersion:1,checkedAt:new Date().toISOString(),purpose:'public store discovery only; does not prove live-account binding',noCredentials:true,stores:[]};
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
