@@ -72,10 +72,11 @@
       "storeUrl": "https://tclkt.tmall.com/",
       "shopId": "111869866",
       "accountId": "2098070993",
-      "roomNumber": null,
-      "verificationStage": "public-tmall-store-seller-id-candidate",
-      "userConfirmed": true,
-      "sourceNote": "User explicitly requested TCL空调官方旗舰店; publicly visible tclkt.m.tmall.com shopId 111869866/sellerId 2098070993 confirmed by GitHub run 41597033971. Live-room identity unverified."
+      "roomNumber": "131101",
+      "verificationStage": "live-detail-identity-and-live-state-verified-candidate",
+      "userConfirmed": false,
+      "sourceNote": "Shop identity public guest storefront run 41597033971; live broadcaster accountId 2098070993, name TCL空调官方旗舰店, roomNum 131101, liveId 223743759187389, roomStatus=1, streamStatus=1 independently confirmed in run 41597651091. User asked to check whether it exists; do not count as approved monitoring scope until confirmed.",
+      "expectedLiveAccountName": "TCL空调官方旗舰店"
     }
   ]
 }
