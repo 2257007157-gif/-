@@ -68,6 +68,18 @@
       "label": "TCL空调旗舰店相关历史公开视频，发布者待确认",
       "kind": "video",
       "url": "https://www.douyin.com/video/7148273261053218055"
+    },
+    {
+      "key": "tcl-douyin-tv-live-profile",
+      "label": "TCL电视官方直播间视频发布者主页，待独立验证",
+      "kind": "profile",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAsXDlbg6rHqDV6y7kMxV2GCba4ey2QgDcmUxTuFhnGf5kYIphYC_ieueMXsLlWXgY"
+    },
+    {
+      "key": "tcl-douyin-tv-official-profile",
+      "label": "TCL电视官方视频发布者主页，待独立验证",
+      "kind": "profile",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAIOvCAk_PEYrfvxNT547O5JaYPQvuKY8XgtYpRPtrh74zat0zFLH4vXXK1rF36Got"
     }
   ]
 }
