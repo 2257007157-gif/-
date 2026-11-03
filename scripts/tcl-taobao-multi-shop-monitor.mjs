@@ -33,7 +33,7 @@ function classify(payload, target) {
   const observedAccountId = String(broadcaster.accountId ?? '');
   const roomNumber = String(broadcaster.roomNum ?? d.roomNum ?? '');
   const observed = {accountId:observedAccountId,name:observedName,roomNumber};
-  if (observedAccountId !== target.accountId || clean(observedName) !== clean(target.displayName)) {
+  if (observedAccountId !== target.accountId || clean(observedName) !== clean(target.expectedLiveAccountName || target.displayName)) {
     return {state:'UNKNOWN',reason:'IDENTITY_MISMATCH',observed,apiRet:ret};
   }
   if (target.roomNumber && String(target.roomNumber) !== roomNumber) {
@@ -63,13 +63,16 @@ function classify(payload, target) {
 }
 function validTarget(t) {
   return t && /^[a-z0-9][a-z0-9-]{1,60}$/.test(t.key) && ['tmall','taobao'].includes(t.platform)
-    && typeof t.displayName === 'string' && t.displayName.length>0 && /^https:\/\/[^ ]+$/.test(t.storeUrl)
+    && typeof t.displayName === 'string' && t.displayName.length>0
+    && (t.expectedLiveAccountName===undefined || (typeof t.expectedLiveAccountName==='string' && t.expectedLiveAccountName.length>0))
+    && /^https:\/\/[^ ]+$/.test(t.storeUrl)
     && (t.accountId===null || /^\d{5,24}$/.test(t.accountId))
     && (t.roomNumber===null || /^\d{1,24}$/.test(t.roomNumber));
 }
 function baseRow(t) {
   return {key:t.key,platform:t.platform,displayName:t.displayName,storeUrl:t.storeUrl,
     verificationStage:t.verificationStage,userConfirmed:t.userConfirmed===true,
+    expectedLiveAccountName:t.expectedLiveAccountName||t.displayName,
     accountId:t.accountId,expectedRoomNumber:t.roomNumber,
     checkedAt:new Date().toISOString(),state:'UNKNOWN',identityVerified:false,
     roomNumber:null,liveId:null,roomStatus:null,streamStatus:null,
