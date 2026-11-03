@@ -38,6 +38,18 @@
       "label": "TCL空调售后推广相关视频（发布者待核验）",
       "url": "https://www.douyin.com/video/7677206034120740123",
       "kind": "video"
+    },
+    {
+      "key": "tcl-douyin-flagship-profile",
+      "label": "TCL官方旗舰店相关公开视频的发布者主页候选",
+      "kind": "profile",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAVozXF9jRtNt6k62dH8TZXld0RGpvIK8aZxEh3oWcBfM"
+    },
+    {
+      "key": "tcl-douyin-air-streamer-profile",
+      "label": "TCL空调总部官方直播间相关公开视频的发布者主页候选",
+      "kind": "profile",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAhiY52DG42njffnKGyWFpKSXJzn2au4FDC40NUdz56TtOxx56LLxa55v9pzk3F8yx"
     }
   ]
 }
