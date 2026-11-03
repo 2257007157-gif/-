@@ -33,10 +33,11 @@
       "storeUrl": "https://tclzm.tmall.com/",
       "shopId": "73045984",
       "accountId": "1015493951",
-      "roomNumber": null,
-      "verificationStage": "storefront-public-seller-id-candidate",
+      "roomNumber": "128789",
+      "verificationStage": "broadcaster-identity-corroborated-guest-live-status-pending",
       "userConfirmed": false,
-      "sourceNote": "Public Tmall guest storefront shopId/sellerId via GitHub Actions run 41596209429; livestream identity not yet verified"
+      "sourceNote": "Public Tmall storefront shopId 73045984/sellerId 1015493951 and two guest live-detail responses with exact broadcaster name TCL照明官方旗舰 and roomNum 128789; run 41596404527. Name alias explicitly pinned, not fuzzy matching.",
+      "expectedLiveAccountName": "TCL照明官方旗舰"
     },
     {
       "key": "tcl-outdoor-candidate",
