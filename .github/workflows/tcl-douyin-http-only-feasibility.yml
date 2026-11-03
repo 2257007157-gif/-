@@ -1,0 +1,26 @@
+name: TCL-Douyin-HTTP-Only-Serverless-Feasibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [tcl-douyin-diagnostic]
+    paths:
+      - 'scripts/tcl-douyin-http-only-feasibility.mjs'
+      - '.github/workflows/tcl-douyin-http-only-feasibility.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ordinary HTTP-only public page feasibility test
+        run: node scripts/tcl-douyin-http-only-feasibility.mjs
+      - name: Save evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-douyin-http-only-feasibility-evidence
+          path: tcl-douyin-http-only-feasibility.json
+          retention-days: 7
+          if-no-files-found: warn
