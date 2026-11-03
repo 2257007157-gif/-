@@ -1,0 +1,30 @@
+name: TCL-Air-Conditioner-Single-Shop-Live-Diagnostic
+on:
+  push:
+    branches: [tcl-network-diagnostic]
+    paths:
+      - 'scripts/tcl-air-conditioner-live-diagnostic.mjs'
+      - '.github/workflows/tcl-air-conditioner-live-diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install public Chromium browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Check independent TCL air conditioner live account
+        run: node scripts/tcl-air-conditioner-live-diagnostic.mjs
+      - name: Save diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcl-air-conditioner-live-diagnostic
+          path: tcl-air-conditioner-diagnostic.json
+          retention-days: 7
+          if-no-files-found: warn
