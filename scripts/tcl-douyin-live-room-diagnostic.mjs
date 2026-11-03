@@ -5,7 +5,10 @@ import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 
 const input=JSON.parse(await fs.readFile('config/tcl-douyin-live-room-candidates.json','utf8'));
-if(input.schemaVersion!==1||!Array.isArray(input.targets)||!input.targets.length)throw Error('Invalid input');
+if(input.schemaVersion!==1||!Array.isArray(input.targets)||input.targets.length!==4)throw Error('Expected exactly four approved Douyin targets');
+if(input.targets.some(t=>t.scopeApproved!==true))throw Error('Target scope not approved');
+if(new Set(input.targets.map(t=>t.displayDouyinId)).size!==4||new Set(input.targets.map(t=>t.profileUrl)).size!==4)throw Error('Duplicate account identity');
+if(new Set(input.targets.map(t=>t.roomId)).size!==4)throw Error('Duplicate room identifier');
 const report={schemaVersion:1,startedAt:new Date().toISOString(),platform:'douyin',
  method:'public profile + publicly linked live room page; no credentials',targets:[]};
 function assertUrl(s,host,prefix){
@@ -39,14 +42,14 @@ try{
   assertUrl(t.roomUrl,'live.douyin.com','/');
   if(!/^\d{5,24}$/.test(t.roomId)||t.roomUrl!=='https://live.douyin.com/'+t.roomId)throw Error('invalid room');
   const row={key:t.key,accountName:t.accountName,displayDouyinId:t.displayDouyinId,roomId:t.roomId,
-    state:'UNKNOWN',scopeApproved:false,reason:'NOT_CHECKED',positiveProfileLiveEvidence:false,
+    state:'UNKNOWN',scopeApproved:t.scopeApproved===true,reason:'NOT_CHECKED',positiveProfileLiveEvidence:false,
     profileIdentityVerified:false,roomPageIdentityVerified:false};
   const profilePage=await context.newPage(),roomPage=await context.newPage();
   try{
     row.profile=await view(profilePage,t.profileUrl);
     const p=row.profile;
     row.profileIdentityVerified=p.httpStatus===200&&!p.securityChallenge
-      &&p.title?.includes(t.accountName)
+      &&p.title===t.accountName+'的抖音 - 抖音'
       &&p.bodyExcerpt?.includes('抖音号：'+t.displayDouyinId);
     row.positiveProfileLiveEvidence=row.profileIdentityVerified&&p.liveRoomAnchors?.some(a=>
       new URL(a.href).pathname==='/'+t.roomId&&a.text.includes('直播中'));
@@ -54,7 +57,10 @@ try{
     const room=row.room;
     // We never equate successful loading alone with a LIVE signal.
     row.roomPageIdentityVerified=room.httpStatus===200&&!room.securityChallenge
-      &&!room.loginGate&&(room.bodyExcerpt?.includes(t.accountName)||room.metaDescription?.includes(t.accountName));
+      &&!room.loginGate&&room.title===t.accountName+'的抖音直播间 - 抖音直播'
+      &&room.metaDescription?.startsWith('欢迎来到'+t.accountName+'的抖音直播间');
+    // A positive result needs account-specific profile link AND a matching room page.
+    // Unknown is never silently converted to OFFLINE: no negative-control proof yet.
     if(row.positiveProfileLiveEvidence&&row.roomPageIdentityVerified){
       row.state='LIVE';
       row.reason='PROFILE_LIVE_BADGE_AND_ROOM_PAGE_IDENTITY';
