@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "policy": "candidate listings do not imply TCL-user-owned monitored rooms; only explicitly confirmed entries become production targets",
+  "targets": [
+    {
+      "key": "tcl-group",
+      "platform": "tmall",
+      "displayName": "TCL集团官方旗舰店",
+      "storeUrl": "https://shop109942179.taobao.com/",
+      "shopId": "109942179",
+      "accountId": "2050532947",
+      "roomNumber": "130742",
+      "verificationStage": "previously-verified-live-and-offline",
+      "userConfirmed": true,
+      "sourceNote": "User-provided Taobao shop links and independent live-detail checks"
+    },
+    {
+      "key": "tcl-tv-candidate",
+      "platform": "tmall",
+      "displayName": "TCL电视官方旗舰店",
+      "storeUrl": "https://tcldq.tmall.com/",
+      "shopId": null,
+      "accountId": "395601843",
+      "roomNumber": null,
+      "verificationStage": "candidate-historical-account-id",
+      "userConfirmed": false,
+      "sourceNote": "Public historical Tmall store links containing user_number_id=395601843"
+    },
+    {
+      "key": "tcl-lighting-candidate",
+      "platform": "tmall",
+      "displayName": "TCL照明官方旗舰店",
+      "storeUrl": "https://tclzm.tmall.com/",
+      "shopId": null,
+      "accountId": null,
+      "roomNumber": null,
+      "verificationStage": "candidate-store-url-only",
+      "userConfirmed": false,
+      "sourceNote": "TCL Lighting public retailer list"
+    },
+    {
+      "key": "tcl-outdoor-candidate",
+      "platform": "tmall",
+      "displayName": "TCL户外旗舰店",
+      "storeUrl": "https://tclhw.tmall.com/",
+      "shopId": null,
+      "accountId": null,
+      "roomNumber": null,
+      "verificationStage": "candidate-store-url-only",
+      "userConfirmed": false,
+      "sourceNote": "TCL Lighting public retailer list"
+    }
+  ]
+}
