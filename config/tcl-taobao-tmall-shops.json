@@ -64,6 +64,18 @@
       "userConfirmed": false,
       "sourceNote": "Public Tmall store sellerId/shopId confirmed by Actions 41596209429; live-detail broadcaster account name, numeric room and OFFLINE status confirmed by Actions 41596669878. Candidate for user's monitored-shop scope, not user-approved.",
       "expectedLiveAccountName": "TCL正品专卖店"
+    },
+    {
+      "key": "tcl-air-conditioner-candidate",
+      "platform": "tmall",
+      "displayName": "TCL空调官方旗舰店",
+      "storeUrl": "https://tclkt.tmall.com/",
+      "shopId": "111869866",
+      "accountId": "2098070993",
+      "roomNumber": null,
+      "verificationStage": "public-tmall-store-seller-id-candidate",
+      "userConfirmed": true,
+      "sourceNote": "User explicitly requested TCL空调官方旗舰店; publicly visible tclkt.m.tmall.com shopId 111869866/sellerId 2098070993 confirmed by GitHub run 41597033971. Live-room identity unverified."
     }
   ]
 }
