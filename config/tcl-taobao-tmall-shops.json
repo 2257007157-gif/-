@@ -21,10 +21,10 @@
       "storeUrl": "https://tcldq.tmall.com/",
       "shopId": null,
       "accountId": "395601843",
-      "roomNumber": null,
-      "verificationStage": "candidate-historical-account-id",
+      "roomNumber": "74370",
+      "verificationStage": "live-detail-identity-and-live-state-verified-candidate",
       "userConfirmed": false,
-      "sourceNote": "Public historical Tmall store links containing user_number_id=395601843"
+      "sourceNote": "Public historical Tmall seller account ID; confirmed current account name, room 74370, live state and session ID by GitHub Actions run 41556225479"
     },
     {
       "key": "tcl-lighting-candidate",
