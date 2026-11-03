@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Discovery of PUBLIC Douyin account/room links only. Search/video pages are unverified account candidates, not monitoring-approved hosts.",
+  "noCredentialUse": true,
+  "candidates": [
+    {
+      "key": "tcl-douyin-flagship-search",
+      "label": "TCL官方旗舰店（账户搜索，待核验）",
+      "url": "https://www.douyin.com/search/TCL官方旗舰店?type=user",
+      "kind": "search"
+    },
+    {
+      "key": "tcl-douyin-tv-search",
+      "label": "TCL电视官方旗舰店（账户搜索，待核验）",
+      "url": "https://www.douyin.com/search/TCL电视官方旗舰店?type=user",
+      "kind": "search"
+    },
+    {
+      "key": "tcl-douyin-ac-search",
+      "label": "TCL空调官方旗舰店（账户搜索，待核验）",
+      "url": "https://www.douyin.com/search/TCL空调官方旗舰店?type=user",
+      "kind": "search"
+    },
+    {
+      "key": "tcl-douyin-tv-video",
+      "label": "TCL电视直播推广相关视频（发布者待核验）",
+      "url": "https://www.douyin.com/video/7686061548648860934",
+      "kind": "video"
+    },
+    {
+      "key": "tcl-douyin-tv-campaign",
+      "label": "TCL官方旗舰店话题相关视频（发布者待核验）",
+      "url": "https://www.douyin.com/video/7686336551973948713",
+      "kind": "video"
+    },
+    {
+      "key": "tcl-douyin-air-video",
+      "label": "TCL空调售后推广相关视频（发布者待核验）",
+      "url": "https://www.douyin.com/video/7677206034120740123",
+      "kind": "video"
+    }
+  ]
+}
